@@ -1,6 +1,9 @@
 import {AuthenticationComponent} from '@loopback/authentication';
 import {
-  JWTAuthenticationComponent, TokenServiceBindings, UserServiceBindings
+  JWTAuthenticationComponent,
+  RefreshTokenServiceBindings,
+  TokenServiceBindings,
+  UserServiceBindings
 } from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
@@ -31,6 +34,8 @@ export class MlCloudDDoSApiAuthApplication extends BootMixin(
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
 
+    this.mountAuthSystem();
+
     // Customize @loopback/rest-explorer configuration here
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
@@ -47,14 +52,19 @@ export class MlCloudDDoSApiAuthApplication extends BootMixin(
         nested: true,
       },
     };
+  }
 
-    // Mount authentication system
+  private mountAuthSystem() {
     this.component(AuthenticationComponent);
-    // Mount jwt component
     this.component(JWTAuthenticationComponent);
-    // Bind datasource
+
     this.dataSource(MongoDbAtlasDataSource, UserServiceBindings.DATASOURCE_NAME);
-    // for jwt access token
+    this.dataSource(MongoDbAtlasDataSource, RefreshTokenServiceBindings.DATASOURCE_NAME);
+
     this.bind(TokenServiceBindings.TOKEN_SECRET).to(process.env.TOKEN_SECRET!);
+    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to('21600'); // 21600 s = 6 h
+
+    this.bind(RefreshTokenServiceBindings.REFRESH_SECRET).to(process.env.REFRESH_SECRET!);
+    this.bind(RefreshTokenServiceBindings.REFRESH_EXPIRES_IN).to('216000'); // 216000 s = 2.5 days
   }
 }

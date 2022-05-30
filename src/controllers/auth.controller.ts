@@ -1,0 +1,157 @@
+// Copyright IBM Corp., LoopBack contributors, and jlopezg8 <jlopezg8@gmail.com>
+// 2022. All Rights Reserved.
+// Node module: @loopback/authentication-jwt
+// This file is licensed under the MIT License.
+// License text available at https://opensource.org/licenses/MIT
+
+import {
+  authenticate,
+  TokenService,
+  UserService
+} from '@loopback/authentication';
+import {
+  Credentials as CredentialsInterface,
+  RefreshTokenService,
+  RefreshTokenServiceBindings,
+  TokenObject,
+  TokenServiceBindings,
+  User,
+  UserRepository,
+  UserServiceBindings
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {get, HttpErrors, post, requestBody} from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {genSalt, hash} from 'bcryptjs';
+import {Credentials, NewUserRequest} from '../models';
+
+export class AuthController {
+  constructor(
+    @inject(RefreshTokenServiceBindings.REFRESH_TOKEN_SERVICE)
+    private refreshService: RefreshTokenService,
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    private tokenService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    private userService: UserService<User, CredentialsInterface>,
+    @inject(UserServiceBindings.USER_REPOSITORY)
+    private userRepository: UserRepository,
+  ) { }
+
+  @authenticate('jwt')
+  @post('/create-user', {
+    responses: {
+      '200': {
+        description: 'Created user',
+        content: {'application/json': {schema: {'x-ts-type': User}}},
+      },
+    },
+  })
+  async createUser(
+    @requestBody({required: true})
+    newUserRequest: NewUserRequest,
+  ): Promise<User> {
+    const foundUser = await this.userRepository.findOne({
+      where: {email: newUserRequest.email},
+    });
+    if (foundUser) {
+      throw new HttpErrors.BadRequest('a user with this email address already exists');
+    }
+    const password = await hash(newUserRequest.password, await genSalt());
+    delete (newUserRequest as Partial<NewUserRequest>).password;
+    const savedUser = await this.userRepository.create(newUserRequest);
+    await this.userRepository.userCredentials(savedUser.id).create({password});
+    return savedUser;
+  }
+
+  @post('/login', {
+    responses: {
+      '200': {
+        description: 'Access and refresh tokens',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                accessToken: {type: 'string'},
+                refreshToken: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async login(
+    @requestBody({required: true})
+    credentials: Credentials,
+  ): Promise<TokenObject> {
+    const user = await this.userService.verifyCredentials(credentials);
+    const userProfile = this.userService.convertToUserProfile(user);
+    const accessToken = await this.tokenService.generateToken(userProfile);
+    const tokens = await this.refreshService.generateToken(
+      userProfile, accessToken);
+    return tokens;
+  }
+
+  @post('/refresh-token', {
+    responses: {
+      '200': {
+        description: 'New access token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                accessToken: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async refreshToken(
+    @requestBody({
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['refreshToken'],
+            properties: {
+              refreshToken: {type: 'string'},
+            },
+          }
+        },
+      },
+    })
+    refreshGrant: {refreshToken: string},
+  ): Promise<TokenObject> {
+    return this.refreshService.refreshToken(refreshGrant.refreshToken);
+  }
+
+  @authenticate('jwt')
+  @get('/whoAmI', {
+    responses: {
+      '200': {
+        description: 'Current user profile',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async whoAmI(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<UserProfile> {
+    return currentUserProfile;
+  }
+}
