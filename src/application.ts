@@ -5,6 +5,12 @@ import {
   TokenServiceBindings,
   UserServiceBindings
 } from '@loopback/authentication-jwt';
+/*import {
+  AuthorizationBindings,
+  AuthorizationComponent,
+  AuthorizationDecision,
+  AuthorizationOptions
+} from '@loopback/authorization';*/
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -66,5 +72,14 @@ export class MlCloudDDoSApiAuthApplication extends BootMixin(
 
     this.bind(RefreshTokenServiceBindings.REFRESH_SECRET).to(process.env.REFRESH_SECRET!);
     this.bind(RefreshTokenServiceBindings.REFRESH_EXPIRES_IN).to('216000'); // 216000 s = 2.5 days
+
+    /*const authorizationOptions: AuthorizationOptions = {
+      // Controls if Allow/Deny vote takes precedence and override other votes
+      precedence: AuthorizationDecision.DENY,
+      // Default decision if all authorizers vote for ABSTAIN
+      defaultDecision: AuthorizationDecision.DENY,
+    };
+    this.configure(AuthorizationBindings.COMPONENT).to(authorizationOptions);
+    this.component(AuthorizationComponent);*/
   }
 }
