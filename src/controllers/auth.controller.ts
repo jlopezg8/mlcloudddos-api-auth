@@ -36,6 +36,7 @@ export class AuthController {
           'application/json': {
             schema: {
               type: 'object',
+              required: ['accessToken', 'refreshToken'],
               properties: {
                 accessToken: {type: 'string'},
                 refreshToken: {type: 'string'},
@@ -66,6 +67,7 @@ export class AuthController {
           'application/json': {
             schema: {
               type: 'object',
+              required: ['accessToken'],
               properties: {
                 accessToken: {type: 'string'},
               },
