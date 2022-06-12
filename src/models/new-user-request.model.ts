@@ -1,8 +1,8 @@
-import {User} from '@loopback/authentication-jwt';
 import {model, property} from '@loopback/repository';
+import {MyUser} from './my-user.model';
 
 @model()
-export class NewUserRequest extends User {
+export class NewUserRequest extends MyUser {
   @property({
     type: 'string',
     required: true,

@@ -10,7 +10,7 @@ import {
   UserRepository,
   UserServiceBindings
 } from '@loopback/authentication-jwt';
-//import {authorize} from '@loopback/authorization';
+import {authorize} from '@loopback/authorization';
 import {inject} from '@loopback/core';
 import {HttpErrors, post, requestBody} from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
@@ -23,7 +23,7 @@ export class UserController {
   ) { }
 
   @authenticate('jwt')
-  //@authorize({resource: 'user', scopes: ['create'], allowedRoles: ['admin']})
+  @authorize({allowedRoles: ['ADMIN']})
   @post('/users', {
     responses: {
       '200': {
@@ -40,7 +40,8 @@ export class UserController {
       where: {email: newUserRequest.email},
     });
     if (foundUser) {
-      throw new HttpErrors.BadRequest('a user with this email address already exists');
+      throw new HttpErrors.BadRequest(
+        'a user with this email address already exists');
     }
     const password = await hash(newUserRequest.password, await genSalt());
     delete (newUserRequest as Partial<NewUserRequest>).password;

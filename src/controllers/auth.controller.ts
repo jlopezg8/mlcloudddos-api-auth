@@ -4,7 +4,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {TokenService, UserService} from '@loopback/authentication';
+import {authenticate, TokenService, UserService} from '@loopback/authentication';
 import {
   Credentials as CredentialsInterface,
   RefreshTokenService,
@@ -15,7 +15,8 @@ import {
   UserServiceBindings
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {post, requestBody} from '@loopback/rest';
+import {get, post, requestBody} from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Credentials} from '../models';
 
 export class AuthController {
@@ -95,5 +96,31 @@ export class AuthController {
     refreshGrant: {refreshToken: string},
   ): Promise<TokenObject> {
     return this.refreshService.refreshToken(refreshGrant.refreshToken);
+  }
+
+  @authenticate('jwt')
+  @get('/whoAmI', {
+    responses: {
+      '200': {
+        description: 'Current user profile',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['id'],
+              properties: {
+                id: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async whoAmI(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<UserProfile> {
+    return currentUserProfile;
   }
 }
