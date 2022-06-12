@@ -4,11 +4,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {
-  authenticate,
-  TokenService,
-  UserService
-} from '@loopback/authentication';
+import {authenticate, TokenService, UserService} from '@loopback/authentication';
 import {
   Credentials as CredentialsInterface,
   RefreshTokenService,
@@ -16,14 +12,12 @@ import {
   TokenObject,
   TokenServiceBindings,
   User,
-  UserRepository,
   UserServiceBindings
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {get, HttpErrors, post, requestBody} from '@loopback/rest';
+import {get, post, requestBody} from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {genSalt, hash} from 'bcryptjs';
-import {Credentials, NewUserRequest} from '../models';
+import {Credentials} from '../models';
 
 export class AuthController {
   constructor(
@@ -33,35 +27,7 @@ export class AuthController {
     private tokenService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     private userService: UserService<User, CredentialsInterface>,
-    @inject(UserServiceBindings.USER_REPOSITORY)
-    private userRepository: UserRepository,
   ) { }
-
-  @authenticate('jwt')
-  @post('/create-user', {
-    responses: {
-      '200': {
-        description: 'Created user',
-        content: {'application/json': {schema: {'x-ts-type': User}}},
-      },
-    },
-  })
-  async createUser(
-    @requestBody({required: true})
-    newUserRequest: NewUserRequest,
-  ): Promise<User> {
-    const foundUser = await this.userRepository.findOne({
-      where: {email: newUserRequest.email},
-    });
-    if (foundUser) {
-      throw new HttpErrors.BadRequest('a user with this email address already exists');
-    }
-    const password = await hash(newUserRequest.password, await genSalt());
-    delete (newUserRequest as Partial<NewUserRequest>).password;
-    const savedUser = await this.userRepository.create(newUserRequest);
-    await this.userRepository.userCredentials(savedUser.id).create({password});
-    return savedUser;
-  }
 
   @post('/login', {
     responses: {
@@ -71,6 +37,7 @@ export class AuthController {
           'application/json': {
             schema: {
               type: 'object',
+              required: ['accessToken', 'refreshToken'],
               properties: {
                 accessToken: {type: 'string'},
                 refreshToken: {type: 'string'},
@@ -101,6 +68,7 @@ export class AuthController {
           'application/json': {
             schema: {
               type: 'object',
+              required: ['accessToken'],
               properties: {
                 accessToken: {type: 'string'},
               },
@@ -139,6 +107,7 @@ export class AuthController {
           'application/json': {
             schema: {
               type: 'object',
+              required: ['id'],
               properties: {
                 id: {type: 'string'},
               },
