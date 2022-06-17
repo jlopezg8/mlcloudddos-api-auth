@@ -8,7 +8,7 @@ import {
 } from '@loopback/authorization';
 import {Provider} from '@loopback/core';
 
-export class MyAuthorizationProvider implements Provider<Authorizer> {
+export class MyAuthorizerProvider implements Provider<Authorizer> {
   constructor() { }
 
   value(): Authorizer {

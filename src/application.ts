@@ -23,10 +23,9 @@ import {
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MongoDbAtlasDataSource} from './datasources';
-import {MyAuthorizationProvider} from './providers';
 import {MyUserRepository} from './repositories';
 import {MySequence} from './sequence';
-import {MyJWTService, MyUserService} from './services';
+import {MyAuthorizerProvider, MyJWTService, MyUserService} from './services';
 
 require('dotenv').config();
 
@@ -93,7 +92,7 @@ export class MlCloudDDoSApiAuthApplication extends BootMixin(
     // Adapted from https://github.com/loopbackio/loopback-next/tree/master/packages/authorization#create-authorizer-provider
     this
       .bind('authorizationProviders.my-authorizer-provider')
-      .toProvider(MyAuthorizationProvider)
+      .toProvider(MyAuthorizerProvider)
       .tag(AuthorizationTags.AUTHORIZER);
   }
 }
