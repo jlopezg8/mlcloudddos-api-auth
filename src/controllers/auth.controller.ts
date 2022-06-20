@@ -4,7 +4,11 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {authenticate, TokenService, UserService} from '@loopback/authentication';
+import {
+  authenticate,
+  TokenService,
+  UserService
+} from '@loopback/authentication';
 import {
   Credentials as CredentialsInterface,
   RefreshTokenService,
@@ -17,7 +21,7 @@ import {
 import {inject} from '@loopback/core';
 import {get, post, requestBody} from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Credentials} from '../models';
+import {Credentials, MyUserProfile} from '../models';
 
 export class AuthController {
   constructor(
@@ -103,17 +107,7 @@ export class AuthController {
     responses: {
       '200': {
         description: 'Current user profile',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              required: ['id'],
-              properties: {
-                id: {type: 'string'},
-              },
-            },
-          },
-        },
+        content: {'application/json': {schema: {'x-ts-type': MyUserProfile}}},
       },
     },
   })

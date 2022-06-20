@@ -39,8 +39,8 @@ export class MyJWTService implements TokenService {
         {[securityId]: '', name: ''},
         {
           [securityId]: decodedToken.id,
-          name: decodedToken.name,
           id: decodedToken.id,
+          name: decodedToken.name,
           role: decodedToken.role,
         },
       );
@@ -61,7 +61,6 @@ export class MyJWTService implements TokenService {
     const userInfoForToken = {
       id: userProfile[securityId],
       name: userProfile.name,
-      email: userProfile.email,
       role: userProfile.role,
     };
     // Generate a JSON Web Token
