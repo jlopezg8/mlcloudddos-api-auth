@@ -1,23 +1,22 @@
-// Adapted from https://loopback.io/doc/en/lb4/JWT-authentication-extension.html#customizing-user
+// Copyright IBM Corp., LoopBack contributors, and jlopezg8 <jlopezg8@gmail.com>
+// 2022. All Rights Reserved.
+// Node module: @loopback/authentication-jwt
+// This file is licensed under the MIT License.
+// License text available at https://opensource.org/licenses/MIT
 
 import {UserService} from '@loopback/authentication';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {compare} from 'bcryptjs';
-// User --> MyUser
-import {Credentials, MyUser} from '../models';
-// UserRepository --> MyUserRepository
+import {Credentials, MyUser, MyUserWithRelations} from '../models';
 import {MyUserRepository} from '../repositories';
 
-// User --> MyUser
 export class MyUserService implements UserService<MyUser, Credentials> {
   constructor(
-    // UserRepository --> MyUserRepository
     @repository(MyUserRepository) private userRepository: MyUserRepository,
   ) { }
 
-  // User --> MyUser
   async verifyCredentials(credentials: Credentials): Promise<MyUser> {
     const invalidCredentialsError = 'Invalid email or password.';
 
@@ -39,7 +38,6 @@ export class MyUserService implements UserService<MyUser, Credentials> {
       credentials.password,
       credentialsFound.password,
     );
-
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
     }
@@ -47,7 +45,6 @@ export class MyUserService implements UserService<MyUser, Credentials> {
     return foundUser;
   }
 
-  // User --> MyUser
   convertToUserProfile(user: MyUser): UserProfile {
     return {
       [securityId]: user.id.toString(),
@@ -56,5 +53,15 @@ export class MyUserService implements UserService<MyUser, Credentials> {
       email: user.email,
       role: user.role,
     };
+  }
+
+  async findUserById(id: string): Promise<MyUserWithRelations> {
+    const foundUser = await this.userRepository.findOne({
+      where: {id},
+    });
+    if (!foundUser) {
+      throw new HttpErrors.Unauthorized('user not found');
+    }
+    return foundUser;
   }
 }
